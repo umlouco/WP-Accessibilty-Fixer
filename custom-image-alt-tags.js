@@ -10,8 +10,6 @@ jQuery(document).ready(function ($) {
             postType: ''
         };
     }
-    console.log('this text');
-    console.log(altTagsData);
 
     // Helper function to validate and return non-empty strings or a fallback
     function getValidText(...texts) {
@@ -26,16 +24,42 @@ jQuery(document).ready(function ($) {
     // Function to get the closest heading above an image
     function getClosestHeading(img) {
         let closestHeading = '';
+
         $(img).parents().each(function () {
-            const heading = $(this).find('h1, h2, h3, h4, h5, h6').last().text().trim();
-            if (heading) {
+            var heading_element = $(this).find('h1, h2, h3, h4, h5, h6').first()
+            var heading = heading_element.text().trim();
+            if (heading && !parentsCheckClass(heading_element, "sidebar")) {
                 closestHeading = heading;
                 return false; // Break the loop once a heading is found
             }
+
         });
         return closestHeading || null;
     }
+    function getClosestLinkText(element) {
+        let closestLinkText = '';
+        $(element).parent().find('a').each(function () {
+            if (this != element) {
+                var link_text = $(this).text().trim();
+                if (link_text) {
+                    closestLinkText = link_text;
+                    return false; // Break the loop once a link is found
+                }
+            }
+        })
+        return closestLinkText || null;
+    }
 
+    function parentsCheckClass(element, class_name) {
+        var has_class = false;
+        element.parents().each(function () {
+            if ($(this).hasClass(class_name)) {
+                has_class = true;
+                return false;// Break the loop
+            }
+        });
+        return has_class;
+    }
     // Function to sanitize image name
     function getSanitizedImageName(img) {
         const src = $(img).attr('src');
@@ -54,8 +78,9 @@ jQuery(document).ready(function ($) {
 
     let imageIndex = 0; // Global counter for images processed
 
-    // Function to process an image and set its alt attribute
-    function processImage(img, index) {
+
+    // Function to process post images and set its alt attribute
+    function processPostImage(img, index) {
         if (typeof index === 'undefined') {
             index = imageIndex++;
         }
@@ -102,7 +127,10 @@ jQuery(document).ready(function ($) {
                 break;
             default:
                 // Fallback option
-                altText = getValidText(imgName, altTagsData.postTitle, altTagsData.seoTitle, altTagsData.siteName, 'Image');
+                if (closestHeading != "")
+                    altText = getValidText(closestHeading, altTagsData.postTitle, altTagsData.seoTitle, altTagsData.siteName, 'Image');
+                else
+                    altText = getValidText(imgName, altTagsData.postTitle, altTagsData.seoTitle, altTagsData.siteName, 'Image');
                 break;
         }
 
@@ -114,9 +142,43 @@ jQuery(document).ready(function ($) {
             $(img).attr('alt', altText);
         }
     }
+    // Function to process an image and set its alt attribute
+    function processImage(img, index) {
+        if (typeof index === 'undefined') {
+            index = imageIndex++;
+        }
+
+        // Check if the current alt attribute is valid and not empty
+        const currentAlt = $(img).attr('alt');
+        if (currentAlt && currentAlt.trim() !== '') {
+            return; // Skip this image since it already has a valid alt attribute
+        }
+
+        let altText = '';
+        const closestHeading = getClosestHeading(img);
+        const imgName = getSanitizedImageName(img);
+
+        if (closestHeading != "")
+            altText = getValidText(closestHeading, altTagsData.postTitle, altTagsData.seoTitle, altTagsData.siteName, 'Image');
+        else
+            altText = getValidText(imgName, altTagsData.postTitle, altTagsData.seoTitle, altTagsData.siteName, 'Image');
+        // Set the alt attribute of the image if it's not already set or is empty
+        if (!$(img).attr('alt') || $(img).attr('alt').trim() === '') {
+            if (!altText || altText.trim() === '') {
+                altText = 'Image';
+            }
+            $(img).attr('alt', altText);
+        }
+    }
+
+
 
     // Process images that are already in the DOM
-    $('body img').each(function (index) {
+    $('.type-post img, .single:not(.single-journal) img, .libri img').each(function (index) {
+        processPostImage(this, index);
+    });
+    // Process images that are already in the DOM
+    $('.type-page img, .page img, .single.single-journal img').each(function (index) {
         processImage(this, index);
     });
 
@@ -139,9 +201,14 @@ jQuery(document).ready(function ($) {
 
     // Start observing the body for added nodes
     observer.observe(document.body, { childList: true, subtree: true });
-
+    $('.carousel-prev').each(function () {
+        $(this).append('<span class="sr-only">Carousel Previous</span>');
+    })
+    $('.carousel-next').each(function () {
+        $(this).append('<span class="sr-only">Carousel Next</span>');
+    })
     // Process empty links as before
-    $('a').each(function () {
+    $('a:not(.carousel-prev),a:not(.carousel-next)').each(function () {
         var link = $(this);
         var textContent = link.text().trim();
         var hasTextContent = textContent !== '';
@@ -178,7 +245,18 @@ jQuery(document).ready(function ($) {
             // Capitalize the label
             label = label.charAt(0).toUpperCase() + label.slice(1);
             // Add the accessible name
-            link.attr('aria-label', label);
+            if (label != "Link" && label != "") {
+                link.attr('aria-label', label);
+                link.append('<span class="sr-only">' + label + '</span>');
+            } else {
+                const closestHeading = getClosestHeading(link);
+                if (closestHeading != "")
+                    if ($(link).children('img').attr('alt') != closestHeading)
+                        link.append('<span class="sr-only">' + closestHeading + '</span>');
+                    else
+                        link.append('<span class="sr-only">Link</span>');
+            }
+
         }
     });
 
@@ -189,7 +267,7 @@ jQuery(document).ready(function ($) {
         if (figure.find('figcaption').length === 0) {
             var img = figure.find('img');
             var captionText = img.attr('alt') || 'Figure';
-            figure.append('<figcaption>' + captionText + '</figcaption>');
+            figure.append('<figcaption  class="sr-only">' + captionText + '</figcaption>');
         }
     });
 
