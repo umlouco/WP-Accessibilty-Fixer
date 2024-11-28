@@ -1,7 +1,7 @@
 <?php
 /*
-Plugin Name: Custom Image Alt Tags
-Description: Automatically populates image alt tags in posts based on specified rules.
+Plugin Name: WP Acessibility Fixer
+Description: WP Acessibility Fixer is a WordPress plugin that automatically fixes some acessibility issues on the website
 Version: 1.0
 Author: Mario Flores
 */
