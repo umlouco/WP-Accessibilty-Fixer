@@ -7,7 +7,7 @@ Author: Mario Flores
 */
 function custom_enqueue_image_alt_script()
 {
-
+    wp_enqueue_style('custom-image-alt-tags', plugin_dir_url(__FILE__) . 'custom-image-alt-tags.css');
     wp_enqueue_script('custom-image-alt-tags', plugin_dir_url(__FILE__) . 'custom-image-alt-tags.js', array('jquery'), null, true);
 
     // Pass necessary data to the JavaScript file
