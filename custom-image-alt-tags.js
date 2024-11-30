@@ -1,14 +1,14 @@
 jQuery(document).ready(function ($) {
-	//give names for multiple headers and footers
+    //give names for multiple headers and footers
     $('a').each(function (index) {
-       if($(this).html().trim() == ""){
-		   $(this).remove();
-	   }
-        
+        if ($(this).html().trim() == "") {
+            $(this).remove();
+        }
+
 
     });
-	
-	
+
+
     // Ensure altTagsData is defined
     if (typeof altTagsData === 'undefined') {
         var altTagsData = {
@@ -55,10 +55,15 @@ jQuery(document).ready(function ($) {
     $('.carousel-next').each(function () {
         $(this).append('<span class="sr-only">Carousel Next</span>');
     })
-
-
+    
     // Process empty links as before
-    $('a:not(.carousel-prev),a:not(.carousel-next)').each(function () {
+
+    $('a.nv-search').each(function () {
+        $(this).attr('aria-label', 'Search Button')
+        $(this).find("svg").attr('aria-label', 'Search Button Icon')
+    })
+
+    $('a').not(".carousel-prev", ".carousel-next", ".nv-search").each(function () {
         var link = $(this);
         var textContent = link.text().trim();
         var hasTextContent = textContent !== '';
@@ -154,200 +159,263 @@ jQuery(document).ready(function ($) {
     //scroll to top
     $('.scrollToTop.button').append('<span class="sr-only">Scroll to top</span>');
 
-	
-	//Make form elements navigation work with tab key
-	$('form :input:visible, #termes_conditions').each(function() {               
-    $(this).attr('tabindex', '0');
-});
-//functions
-// Helper function to validate and return non-empty strings or a fallback
-function getValidText(...texts) {
-    for (const text of texts) {
-        if (text && text.trim() !== '') {
-            return text.trim();
-        }
-    }
-    return null;
-}
-
-// Function to get the closest heading above an image
-function getClosestHeading(img) {
-
-    let closestHeading = '';
-
-    $(img).parents().each(function () {
-        var heading_element = $(this).find('h1, h2, h3, h4, h5, h6').first()
-        var heading = heading_element.text().trim();
-        if (heading && !parentsCheckClass(heading_element, "sidebar")) {
-            closestHeading = heading;
-            return false; // Break the loop once a heading is found
-        }
-
-    });
-    return closestHeading || null;
-}
-	function getClosestLink(img) {
-
-    let closestLink = '';
-
-    $(img).parents().each(function () {
-        var link_element = $(this).find('a').first()
-        var link = link_element.text().trim();
-        if (link) {
-            closestLink = link;
-            return false; // Break the loop once a heading is found
-        }
-
-    });
-    return closestLink || null;
-}
-function getClosestLinkText(element) {
-    let closestLinkText = '';
-    $(element).parent().find('a').each(function () {
-        if (this != element) {
-            var link_text = $(this).text().trim();
-            if (link_text) {
-                closestLinkText = link_text;
-                return false; // Break the loop once a link is found
+    //fix owl slider buttons
+    var owl_interval = setInterval(function () {
+        if ($('.owl-prev[role="presentation"]').length || $('.owl-next[role="presentation"]').length || $('.owl-dot[role="button"]').length) {
+            $('.owl-prev').each(function () {
+                $(this).removeAttr("role")
+                $(this).attr('aria-label', 'Carousel Previous');
+            })
+            $('.owl-next').each(function () {
+                $(this).removeAttr("role")
+                $(this).attr('aria-label', 'Carousel Next');
+            })
+            $('.owl-dot').each(function () {
+                $(this).removeAttr("role")
+                $(this).attr('aria-label', 'Carousel Dot');
+            })
+        } else {
+            if (owl_interval) {
+                clearInterval(owl_interval);
+                owl_interval = 0;
             }
         }
-    })
-    return closestLinkText || null;
-}
+    }, 500)
 
-function parentsCheckClass(element, class_name) {
-    var has_class = false;
-    element.parents().each(function () {
-        if ($(this).hasClass(class_name)) {
-            has_class = true;
-            return false;// Break the loop
+    // fix bootstrap select
+    var bootstrap_select_interval = setInterval(function () {
+        if ($('button[aria-owns*="bs-select-"]').length) {
+            $('button[aria-owns*="bs-select-"]').each(function () {
+                var aria_owns = $(this).attr("aria-owns");
+                $(this).removeAttr("aria-owns");
+
+                $(this).attr('aria-controls', aria_owns);
+            })
+        } else {
+            if (bootstrap_select_interval) {
+                clearInterval(bootstrap_select_interval);
+                bootstrap_select_interval = 0;
+            }
         }
-    });
-    return has_class;
-}
-// Function to sanitize image name
-function getSanitizedImageName(img) {
-    const src = $(img).attr('src');
-    if (!src) {
-        return 'Image';
-    }
-    let imgName = src.split('/').pop().replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9]/g, ' ').trim();
+    }, 500)
 
-    // Trim imgName to 30 characters if it's longer
-    if (imgName.length > 30) {
-        imgName = imgName.substring(0, 30).trim();
-    }
+    //fix toolset view search
+    $('input[name="wpv_post_search"]').attr('id', 'wpv_post_search');
 
-    return imgName || 'Image'; // Default to "Image" if imgName is empty
-}
-
-let imageIndex = 0; // Global counter for images processed
-
-
-// Function to process post images and set its alt attribute
-function processPostImage(img, index) {
-    if (typeof index === 'undefined') {
-        index = imageIndex++;
-    }
-
-    // Check if the current alt attribute is valid and not empty
-    const currentAlt = $(img).attr('alt');
-    if (currentAlt && currentAlt.trim() !== '') {
-        const closestLink = getClosestLink(img);
-        if (currentAlt.trim() == closestLink)
-            $(img).attr('alt', '');
-        return; // Skip this image since it already has a valid alt attribute
-    }
-
-    let altText = '';
-    const closestHeading = getClosestHeading(img);
-    const imgName = getSanitizedImageName(img);
-
-    // Sequence of alt text options
-    switch (index % 7) {
-        case 0:
-            // 1st image - Closest article heading
-            altText = getValidText(closestHeading, altTagsData.postTitle, altTagsData.seoTitle, altTagsData.siteName, imgName);
-            break;
-        case 1:
-            // 2nd image - Article title
-            altText = getValidText(altTagsData.postTitle, altTagsData.seoTitle, altTagsData.siteName, imgName);
-            break;
-        case 2:
-            // 3rd image - Site name
-            altText = getValidText(altTagsData.siteName, altTagsData.postTitle, altTagsData.seoTitle, imgName);
-            break;
-        case 3:
-            // 4th image - First sentence of the post
-            altText = getValidText(altTagsData.firstSentence, altTagsData.postTitle, altTagsData.seoTitle, altTagsData.siteName, imgName);
-            break;
-        case 4:
-            // 5th image - Site category/post type
-            altText = getValidText(`${altTagsData.postCategory} ${altTagsData.postType}`.trim(), altTagsData.siteName, altTagsData.postTitle, altTagsData.seoTitle, imgName);
-            break;
-        case 5:
-            // 6th image - SEO title if available
-            altText = getValidText(altTagsData.seoTitle, altTagsData.postTitle, altTagsData.siteName, imgName);
-            break;
-        case 6:
-            // 7th image - Closest heading with a variant (closest heading + article title)
-            altText = getValidText(`${closestHeading} ${altTagsData.postTitle}`.trim(), altTagsData.seoTitle, altTagsData.siteName, imgName);
-            break;
-        default:
-            // Fallback option
-            if (closestHeading != "")
-                altText = getValidText(closestHeading, altTagsData.postTitle, altTagsData.seoTitle, altTagsData.siteName, 'Image');
-            else
-                altText = getValidText(imgName, altTagsData.postTitle, altTagsData.seoTitle, altTagsData.siteName, 'Image');
-            break;
-    }
-
-    // Set the alt attribute of the image if it's not already set or is empty
-    const closestLink = getClosestLink(img);
-    if (!$(img).attr('alt') || $(img).attr('alt').trim() === '' || altText == closestLink) {
-        if (!altText || altText.trim() === '') {
-            altText = 'Image';
-        }
-        if (altText == closestLink)
-            $(img).attr('alt','');
-        else $(img).attr('alt', altText);
-    }
-}
-// Function to process an image and set its alt attribute
-function processImage(img, index) {
-    if (typeof index === 'undefined') {
-        index = imageIndex++;
-    }
-
-    // Check if the current alt attribute is valid and not empty
-    const currentAlt = $(img).attr('alt');
-    if (currentAlt && currentAlt.trim() !== '') {
-		const closestLink = getClosestLink(img);
-        if (currentAlt.trim() == closestLink)
-            $(img).attr('alt', '');
-        return; // Skip this image since it already has a valid alt attribute
-    }
-
-    let altText = '';
-    const closestHeading = getClosestHeading(img);
-    const imgName = getSanitizedImageName(img);
-
-    if (closestHeading != "")
-        altText = getValidText(closestHeading, altTagsData.postTitle, altTagsData.seoTitle, altTagsData.siteName, 'Image');
-    else
-        altText = getValidText(imgName, altTagsData.postTitle, altTagsData.seoTitle, altTagsData.siteName, 'Image');
+    //fix toolset view pagination
+    $('.js-wpv-page-selector').attr('aria-label', 'Page Selector');
     
-	// Set the alt attribute of the image if it's not already set or is empty
-	const closestLink = getClosestLink(img);
-    if (!$(img).attr('alt') || $(img).attr('alt').trim() === '' || altText == closestLink) {
-        if (!altText || altText.trim() === '') {
-            altText = 'Image';
+    /*Fix h tag order
+    var previous_h_order = 6;
+    for (var i = 2; i <= 6; i++) {
+        previous_h_order = i;
+        do {
+            previous_h_order--;
         }
-        if (altText == closestLink)
-            $(img).attr('alt', '');
-        else $(img).attr('alt', altText);
+        while (previous_h_order >= 1 && $('h' + previous_h_order).length == 0)
+        console.log(previous_h_order);
+        if (previous_h_order != (i - 1))
+            $('h' + i).each(function () {
+                var el = $(this)[0];
+                el.outerHTML = '<h' + (previous_h_order) + '>' + el.innerHTML + '</h' + (previous_h_order) + '>';
+            })
     }
-}
+    */
+
+
+    //Make form elements navigation work with tab key
+    $('form :input:visible, #termes_conditions').each(function () {
+        $(this).attr('tabindex', '0');
+    });
+    //functions
+    // Helper function to validate and return non-empty strings or a fallback
+    function getValidText(...texts) {
+        for (const text of texts) {
+            if (text && text.trim() !== '') {
+                return text.trim();
+            }
+        }
+        return null;
+    }
+
+    // Function to get the closest heading above an image
+    function getClosestHeading(img) {
+
+        let closestHeading = '';
+
+        $(img).parents().each(function () {
+            var heading_element = $(this).find('h1, h2, h3, h4, h5, h6').first()
+            var heading = heading_element.text().trim();
+            if (heading && !parentsCheckClass(heading_element, "sidebar")) {
+                closestHeading = heading;
+                return false; // Break the loop once a heading is found
+            }
+
+        });
+        return closestHeading || null;
+    }
+    function getClosestLink(img) {
+
+        let closestLink = '';
+
+        $(img).parents().each(function () {
+            var link_element = $(this).find('a').first()
+            var link = link_element.text().trim();
+            if (link) {
+                closestLink = link;
+                return false; // Break the loop once a heading is found
+            }
+
+        });
+        return closestLink || null;
+    }
+    function getClosestLinkText(element) {
+        let closestLinkText = '';
+        $(element).parent().find('a').each(function () {
+            if (this != element) {
+                var link_text = $(this).text().trim();
+                if (link_text) {
+                    closestLinkText = link_text;
+                    return false; // Break the loop once a link is found
+                }
+            }
+        })
+        return closestLinkText || null;
+    }
+
+    function parentsCheckClass(element, class_name) {
+        var has_class = false;
+        element.parents().each(function () {
+            if ($(this).hasClass(class_name)) {
+                has_class = true;
+                return false;// Break the loop
+            }
+        });
+        return has_class;
+    }
+    // Function to sanitize image name
+    function getSanitizedImageName(img) {
+        const src = $(img).attr('src');
+        if (!src) {
+            return 'Image';
+        }
+        let imgName = src.split('/').pop().replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9]/g, ' ').trim();
+
+        // Trim imgName to 30 characters if it's longer
+        if (imgName.length > 30) {
+            imgName = imgName.substring(0, 30).trim();
+        }
+
+        return imgName || 'Image'; // Default to "Image" if imgName is empty
+    }
+
+    let imageIndex = 0; // Global counter for images processed
+
+
+    // Function to process post images and set its alt attribute
+    function processPostImage(img, index) {
+        if (typeof index === 'undefined') {
+            index = imageIndex++;
+        }
+
+        // Check if the current alt attribute is valid and not empty
+        const currentAlt = $(img).attr('alt');
+        if (currentAlt && currentAlt.trim() !== '') {
+            const closestLink = getClosestLink(img);
+            if (currentAlt.trim() == closestLink)
+                $(img).attr('alt', '');
+            return; // Skip this image since it already has a valid alt attribute
+        }
+
+        let altText = '';
+        const closestHeading = getClosestHeading(img);
+        const imgName = getSanitizedImageName(img);
+
+        // Sequence of alt text options
+        switch (index % 7) {
+            case 0:
+                // 1st image - Closest article heading
+                altText = getValidText(closestHeading, altTagsData.postTitle, altTagsData.seoTitle, altTagsData.siteName, imgName);
+                break;
+            case 1:
+                // 2nd image - Article title
+                altText = getValidText(altTagsData.postTitle, altTagsData.seoTitle, altTagsData.siteName, imgName);
+                break;
+            case 2:
+                // 3rd image - Site name
+                altText = getValidText(altTagsData.siteName, altTagsData.postTitle, altTagsData.seoTitle, imgName);
+                break;
+            case 3:
+                // 4th image - First sentence of the post
+                altText = getValidText(altTagsData.firstSentence, altTagsData.postTitle, altTagsData.seoTitle, altTagsData.siteName, imgName);
+                break;
+            case 4:
+                // 5th image - Site category/post type
+                altText = getValidText(`${altTagsData.postCategory} ${altTagsData.postType}`.trim(), altTagsData.siteName, altTagsData.postTitle, altTagsData.seoTitle, imgName);
+                break;
+            case 5:
+                // 6th image - SEO title if available
+                altText = getValidText(altTagsData.seoTitle, altTagsData.postTitle, altTagsData.siteName, imgName);
+                break;
+            case 6:
+                // 7th image - Closest heading with a variant (closest heading + article title)
+                altText = getValidText(`${closestHeading} ${altTagsData.postTitle}`.trim(), altTagsData.seoTitle, altTagsData.siteName, imgName);
+                break;
+            default:
+                // Fallback option
+                if (closestHeading != "")
+                    altText = getValidText(closestHeading, altTagsData.postTitle, altTagsData.seoTitle, altTagsData.siteName, 'Image');
+                else
+                    altText = getValidText(imgName, altTagsData.postTitle, altTagsData.seoTitle, altTagsData.siteName, 'Image');
+                break;
+        }
+
+        // Set the alt attribute of the image if it's not already set or is empty
+        const closestLink = getClosestLink(img);
+        if (!$(img).attr('alt') || $(img).attr('alt').trim() === '' || altText == closestLink) {
+            if (!altText || altText.trim() === '') {
+                altText = 'Image';
+            }
+            if (altText == closestLink)
+                $(img).attr('alt', '');
+            else $(img).attr('alt', altText);
+        }
+    }
+    // Function to process an image and set its alt attribute
+    function processImage(img, index) {
+        if (typeof index === 'undefined') {
+            index = imageIndex++;
+        }
+
+        // Check if the current alt attribute is valid and not empty
+        const currentAlt = $(img).attr('alt');
+        if (currentAlt && currentAlt.trim() !== '') {
+            const closestLink = getClosestLink(img);
+            if (currentAlt.trim() == closestLink)
+                $(img).attr('alt', '');
+            return; // Skip this image since it already has a valid alt attribute
+        }
+
+        let altText = '';
+        const closestHeading = getClosestHeading(img);
+        const imgName = getSanitizedImageName(img);
+
+        if (closestHeading != "")
+            altText = getValidText(closestHeading, altTagsData.postTitle, altTagsData.seoTitle, altTagsData.siteName, 'Image');
+        else
+            altText = getValidText(imgName, altTagsData.postTitle, altTagsData.seoTitle, altTagsData.siteName, 'Image');
+
+        // Set the alt attribute of the image if it's not already set or is empty
+        const closestLink = getClosestLink(img);
+        if (!$(img).attr('alt') || $(img).attr('alt').trim() === '' || altText == closestLink) {
+            if (!altText || altText.trim() === '') {
+                altText = 'Image';
+            }
+            if (altText == closestLink)
+                $(img).attr('alt', '');
+            else $(img).attr('alt', altText);
+        }
+    }
 });
 
 

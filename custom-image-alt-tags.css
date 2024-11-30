@@ -1,3 +1,6 @@
 .sr-only{
     display: none;
 }
+.owl-theme .owl-dots .owl-dot {
+margin: 12px;
+}
