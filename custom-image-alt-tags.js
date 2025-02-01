@@ -1,4 +1,6 @@
 jQuery(document).ready(function ($) {
+	
+	
     //give names for multiple headers and footers
     $('a').each(function (index) {
         if ($(this).html().trim() == "") {
@@ -140,6 +142,7 @@ jQuery(document).ready(function ($) {
     var complementaryCount = 0;
     $('[role="complementary"]').each(function () {
         complementaryCount++;
+		 $(this).removeAttr('aria-labelledby');
         $(this).attr('aria-label', 'Complementary Section ' + complementaryCount);
     });
     //give names for multiple headers and footers
@@ -156,8 +159,10 @@ jQuery(document).ready(function ($) {
     //search button
     $('.search-form button').append('<span class="sr-only">Search</span>');
     $('.search-form button').attr('aria-label', 'Search');
+	$('.search-trigger').attr('aria-label', 'Search');
     //scroll to top
     $('.scrollToTop.button').append('<span class="sr-only">Scroll to top</span>');
+    $('.kleo-go-top').append('<span class="sr-only">Scroll to top</span>');
 
     //fix owl slider buttons
     var owl_interval = setInterval(function () {
