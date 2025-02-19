@@ -1,6 +1,7 @@
 jQuery(document).ready(function ($) {
-	
-	
+    //kleo fix pinterest class
+    $('.kleo-pinterest a').addClass('post_share_pinterest')
+
     //give names for multiple headers and footers
     $('a').each(function (index) {
         if ($(this).html().trim() == "") {
@@ -57,7 +58,7 @@ jQuery(document).ready(function ($) {
     $('.carousel-next').each(function () {
         $(this).append('<span class="sr-only">Carousel Next</span>');
     })
-    
+
     // Process empty links as before
 
     $('a.nv-search').each(function () {
@@ -66,54 +67,62 @@ jQuery(document).ready(function ($) {
     })
 
     $('a').not(".carousel-prev", ".carousel-next", ".nv-search").each(function () {
-        var link = $(this);
-        var textContent = link.text().trim();
-        var hasTextContent = textContent !== '';
-        var hasAriaLabel = link.attr('aria-label') && link.attr('aria-label').trim() !== '';
-        var hasAriaLabelledBy = link.attr('aria-labelledby') && $('#' + link.attr('aria-labelledby')).length > 0;
-        var hasTitle = link.attr('title') && link.attr('title').trim() !== '';
+        if ($(this).hasClass("carousel-prev") || $(this).hasClass("carousel-next") || $(this).hasClass("nv-search") ||
+        $(this).hasClass("kleo-go-top") || $(this).hasClass("kleo-thumbs-prev") || $(this).hasClass("kleo-thumbs-next")||
+        $(this).hasClass("post_share_facebook")||$(this).hasClass("post_share_twitter")||$(this).hasClass("post_share_pinterest")||
+        $(this).hasClass("post_share_linkedin")||$(this).hasClass("post_share_email")) {
 
-        if (!hasTextContent && !hasAriaLabel && !hasAriaLabelledBy && !hasTitle) {
-            // Generate an accessible name
-            var label = 'Link';
+        }
+        else {
+            var link = $(this);
+            var textContent = link.text().trim();
+            var hasTextContent = textContent !== '';
+            var hasAriaLabel = link.attr('aria-label') && link.attr('aria-label').trim() !== '';
+            var hasAriaLabelledBy = link.attr('aria-labelledby') && $('#' + link.attr('aria-labelledby')).length > 0;
+            var hasTitle = link.attr('title') && link.attr('title').trim() !== '';
 
-            if (link.attr('aria-haspopup') === 'true') {
-                label = 'Menu';
-            } else if (link.attr('target') === '_blank') {
-                label = 'External Link';
-            } else {
-                var href = link.attr('href');
-                if (href) {
-                    try {
-                        var url = new URL(href, window.location.origin);
-                        if (url.searchParams && url.searchParams.has('page')) {
-                            label = url.searchParams.get('page').replace(/[-_]/g, ' ').trim() || label;
-                        } else if (url.pathname) {
-                            var pathname = url.pathname;
-                            var parts = pathname.split('/');
-                            var lastPart = parts[parts.length - 1];
-                            label = decodeURIComponent(lastPart).replace(/[-_]/g, ' ').trim() || label;
+            if (!hasTextContent && !hasAriaLabel && !hasAriaLabelledBy && !hasTitle) {
+                // Generate an accessible name
+                var label = 'Link';
+
+                if (link.attr('aria-haspopup') === 'true') {
+                    label = 'Menu';
+                } else if (link.attr('target') === '_blank') {
+                    label = 'External Link';
+                } else {
+                    var href = link.attr('href');
+                    if (href) {
+                        try {
+                            var url = new URL(href, window.location.origin);
+                            if (url.searchParams && url.searchParams.has('page')) {
+                                label = url.searchParams.get('page').replace(/[-_]/g, ' ').trim() || label;
+                            } else if (url.pathname) {
+                                var pathname = url.pathname;
+                                var parts = pathname.split('/');
+                                var lastPart = parts[parts.length - 1];
+                                label = decodeURIComponent(lastPart).replace(/[-_]/g, ' ').trim() || label;
+                            }
+                        } catch (e) {
+                            // Invalid URL, keep default label
                         }
-                    } catch (e) {
-                        // Invalid URL, keep default label
                     }
                 }
-            }
-            // Capitalize the label
-            label = label.charAt(0).toUpperCase() + label.slice(1);
-            // Add the accessible name
-            if (label != "Link" && label != "") {
-                link.attr('aria-label', label);
-                link.append('<span class="sr-only">' + label + '</span>');
-            } else {
-                const closestHeading = getClosestHeading(link);
-                if (closestHeading != "")
-                    if ($(link).children('img').attr('alt') != closestHeading)
-                        link.append('<span class="sr-only">' + closestHeading + '</span>');
-                    else
-                        link.append('<span class="sr-only">Link</span>');
-            }
+                // Capitalize the label
+                label = label.charAt(0).toUpperCase() + label.slice(1);
+                // Add the accessible name
+                if (label != "Link" && label != "") {
+                    link.attr('aria-label', label);
+                    link.append('<span class="sr-only">' + label + '</span>');
+                } else {
+                    const closestHeading = getClosestHeading(link);
+                    if (closestHeading != "")
+                        if ($(link).children('img').attr('alt') != closestHeading)
+                            link.append('<span class="sr-only">' + closestHeading + '</span>');
+                        else
+                            link.append('<span class="sr-only">Link</span>');
+                }
 
+            }
         }
     });
 
@@ -142,7 +151,7 @@ jQuery(document).ready(function ($) {
     var complementaryCount = 0;
     $('[role="complementary"]').each(function () {
         complementaryCount++;
-		 $(this).removeAttr('aria-labelledby');
+        $(this).removeAttr('aria-labelledby');
         $(this).attr('aria-label', 'Complementary Section ' + complementaryCount);
     });
     //give names for multiple headers and footers
@@ -159,10 +168,33 @@ jQuery(document).ready(function ($) {
     //search button
     $('.search-form button').append('<span class="sr-only">Search</span>');
     $('.search-form button').attr('aria-label', 'Search');
-	$('.search-trigger').attr('aria-label', 'Search');
+    $('.search-trigger').attr('aria-label', 'Search');
+
+    //search form
+    $('.searchform input').attr('aria-label', 'Search Input');
+    if ($('.searchsubmit ').val())
+        $('.searchsubmit ').attr('aria-label', $('.searchsubmit ').val());
+    else
+        $('.searchsubmit ').attr('aria-label', 'Search Button');
     //scroll to top
     $('.scrollToTop.button').append('<span class="sr-only">Scroll to top</span>');
+    $('.kleo-go-top').attr('aria-label', 'Scroll to top');
     $('.kleo-go-top').append('<span class="sr-only">Scroll to top</span>');
+
+    //kleo share buttons
+    $('.post_share_facebook').attr('aria-label', 'Share on Facebook');
+    $('.post_share_twitter').attr('aria-label', 'Share on Twitter');
+    $('.post_share_pinterest').attr('aria-label', 'Share on Pinterest');
+    $('.post_share_linkedin').attr('aria-label', 'Share on LinkedIn');
+    $('.post_share_email').attr('aria-label', 'Share by Email');
+
+    //kleo carousel
+    $('.kleo-thumbs-next').each(function () {
+        $(this).attr('aria-label', 'Carousel Next');
+    })
+    $('.kleo-thumbs-prev').each(function () {
+        $(this).attr('aria-label', 'Carousel Previous');
+    })
 
     //fix owl slider buttons
     var owl_interval = setInterval(function () {
@@ -209,7 +241,7 @@ jQuery(document).ready(function ($) {
 
     //fix toolset view pagination
     $('.js-wpv-page-selector').attr('aria-label', 'Page Selector');
-    
+
     /*Fix h tag order
     var previous_h_order = 6;
     for (var i = 2; i <= 6; i++) {
